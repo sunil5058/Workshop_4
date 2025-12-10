@@ -51,43 +51,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Proceed if no errors
+    // ✅ Proceed if no validation errors
     if ($nameErr == "" && $emailErr == "" && $passwordErr == "" && $confirmErr == "") {
 
+        // ✅ Create JSON file if not exists
         if (!file_exists($jsonFile)) {
-            die("<div class='error'>Error: users.json file not found.</div>");
+            file_put_contents($jsonFile, json_encode([]));
         }
 
         $jsonData = file_get_contents($jsonFile);
-
-        if ($jsonData === false) {
-            die("<div class='error'>Error reading users.json file.</div>");
-        }
-
         $usersArray = json_decode($jsonData, true);
 
         if (!is_array($usersArray)) {
             $usersArray = [];
         }
 
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        $newUser = [
-            "name" => $name,
-            "email" => $email,
-            "password" => $hashedPassword
-        ];
-
-        $usersArray[] = $newUser;
-
-        $updatedJson = json_encode($usersArray, JSON_PRETTY_PRINT);
-
-        if (file_put_contents($jsonFile, $updatedJson) === false) {
-            die("<div class='error'>Error writing to users.json file.</div>");
+        // ✅ CHECK IF EMAIL ALREADY EXISTS
+        foreach ($usersArray as $user) {
+            if ($user["email"] === $email) {
+                $emailErr = "This email is already registered!";
+                break;
+            }
         }
 
-        $successMsg = "Registration successful!";
-        $name = $email = "";
+        // ✅ If email is unique, save user
+        if ($emailErr == "") {
+
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            $newUser = [
+                "name" => $name,
+                "email" => $email,
+                "password" => $hashedPassword
+            ];
+
+            $usersArray[] = $newUser;
+
+            $updatedJson = json_encode($usersArray, JSON_PRETTY_PRINT);
+
+            if (file_put_contents($jsonFile, $updatedJson) === false) {
+                die("<div class='error'>Error writing to users.json file.</div>");
+            }
+
+            $successMsg = "Registration successful!";
+            $name = $email = "";
+        }
     }
 }
 ?>
